@@ -11,7 +11,7 @@ Thank you for providing the opportunity for me to complete this take home assing
   
 ## Level 1: Easy
 
-###Implemented: All three endpoints create a new user/training/animal model object and saves them in mongoDB. Error handling requirements are also satisfied.
+### Implemented: All three endpoints create a new user/training/animal model object and saves them in mongoDB. Error handling requirements are also satisfied.
 
 - (2) Create a POST endpoint at `/api/user` to create a user in the database based on information passed into the body
 - (3) Create a POST endpoint at `/api/animal` to create an animal in the database based on information passed into the body
@@ -26,7 +26,7 @@ Thank you for providing the opportunity for me to complete this take home assing
    
 
 ## Level 2: Medium
-###Implemented: All 3 endpoints provide all the documents from their respective types, while implementing pagination. I kept it at a 100/page limit.
+### Implemented: All 3 endpoints provide all the documents from their respective types, while implementing pagination. I kept it at a 100/page limit.
 
 
 - (5) In the training log creation endpoint (3), we want to add in a check to ensure that the animal specified in the training log belongs to the user specified in the training log. Add in code to do this.
@@ -44,7 +44,7 @@ Thank you for providing the opportunity for me to complete this take home assing
   - **Note:** These endpoints must implement pagination -- ideally using the document IDs or some other property that has natural ordering (i.e. take a look at approach 2 in this [article](https://www.codementor.io/@arpitbhayani/fast-and-efficient-pagination-in-mongodb-9095flbqr) if you are using MongoDB)
   
 ## Level 3: Hard
-###Implemented: All endpoints except User Creation, and login have an authenticate endpoint. After login, a JWT token is issued for 5-10 minutes. After expiry the user must login for a new one. Used information from JWT to refactor 2 endpoints .i.e When creating animals and creating training logs. 
+### Implemented: All endpoints except User Creation, and login have an authenticate endpoint. After login, a JWT token is issued for 5-10 minutes. After expiry the user must login for a new one. Used information from JWT to refactor 2 endpoints .i.e When creating animals and creating training logs. 
   
 
 
@@ -69,7 +69,7 @@ Thank you for providing the opportunity for me to complete this take home assing
   - 
   
 ## Level 4: Expert
-###Implemented: Used express-fileupload package to decode files from incoming requests, and these file objects are saved in the server seperately. When the save is complete, their references are saved as the profilePic/video of the user, animal, or the training log object. 
+### Implemented: Used express-fileupload package to decode files from incoming requests, and these file objects are saved in the server seperately. When the save is complete, their references are saved as the profilePic/video of the user, animal, or the training log object. 
 
 - (14) For the final part, we want to add file upload functionality. For this part, you are welcome to use any cloud file storage provider you would like. Create a POST endpoint at `/api/file/upload` to upload your file at.
   - Body: Contains the _type of data_ (i.e. animal image, user image, or training log video) and the ID of the user/animal/training log this file belongs to
