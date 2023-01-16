@@ -11,6 +11,8 @@ Thank you for providing the opportunity for me to complete this take home assing
   
 ## Level 1: Easy
 
+###Implemented: All three endpoints create a new user/training/animal model object and saves them in mongoDB. Error handling requirements are also satisfied.
+
 - (2) Create a POST endpoint at `/api/user` to create a user in the database based on information passed into the body
 - (3) Create a POST endpoint at `/api/animal` to create an animal in the database based on information passed into the body
 - (4) Create a POST endpoint at `/api/training` to create a training log in the database based on information passed into the body
@@ -20,9 +22,12 @@ Thank you for providing the opportunity for me to complete this take home assing
     - **Status 200 (Success):** If the body contains all of the information and is able to create the user/animal/training log
     - **Status 400:** If the body contains incorrect information
     - **Status 500:** For any other errors that occur
- -Implemented: All three endpoints create a new user/training/animal model object and saves them in mongoDB. Error handling requirements are also satisfied.
+    
+   
 
 ## Level 2: Medium
+###Implemented: All 3 endpoints provide all the documents from their respective types, while implementing pagination. I kept it at a 100/page limit.
+
 
 - (5) In the training log creation endpoint (3), we want to add in a check to ensure that the animal specified in the training log belongs to the user specified in the training log. Add in code to do this.
 
@@ -38,9 +43,10 @@ Thank you for providing the opportunity for me to complete this take home assing
     - **Status 500**: For any other errors
   - **Note:** These endpoints must implement pagination -- ideally using the document IDs or some other property that has natural ordering (i.e. take a look at approach 2 in this [article](https://www.codementor.io/@arpitbhayani/fast-and-efficient-pagination-in-mongodb-9095flbqr) if you are using MongoDB)
   
-  - Implemented: All 3 endpoints provide all the documents from their respective types, while implementing pagination. I kept it at a 100/page limit.
-
 ## Level 3: Hard
+###Implemented: All endpoints except User Creation, and login have an authenticate endpoint. After login, a JWT token is issued for 5-10 minutes. After expiry the user must login for a new one. Used information from JWT to refactor 2 endpoints .i.e When creating animals and creating training logs. 
+  
+
 
 - (9) We want to add user authentication. In the user creation endpoint (1), add code that allows a password to be accepted. Encrypt this password using an encryption library (we reccommend using [bcrypt](https://www.npmjs.com/package/bcrypt)) and save it in the database under the user's password field
 - (10) Create a POST endpoint at `/api/user/login` that accepts an email and password and tests whether the password is valid for the given email.
@@ -60,10 +66,10 @@ Thank you for providing the opportunity for me to complete this take home assing
   - I.e. we no longer need to manually specifiy a user id when creating a service animal beacuse we can pull from the info encoded into the JWT.
   
   
-  - Implemented: All endpoints except User Creation, and login have an authenticate endpoint. After login, a JWT token is issued for 5-10 minutes. After expiry the user must login for a new one. Used information from JWT to refactor 2 endpoints .i.e When creating animals and creating training logs. 
-  
+  - 
   
 ## Level 4: Expert
+###Implemented: Used express-fileupload package to decode files from incoming requests, and these file objects are saved in the server seperately. When the save is complete, their references are saved as the profilePic/video of the user, animal, or the training log object. 
 
 - (14) For the final part, we want to add file upload functionality. For this part, you are welcome to use any cloud file storage provider you would like. Create a POST endpoint at `/api/file/upload` to upload your file at.
   - Body: Contains the _type of data_ (i.e. animal image, user image, or training log video) and the ID of the user/animal/training log this file belongs to
@@ -74,4 +80,4 @@ Thank you for providing the opportunity for me to complete this take home assing
     - The method you decide to transport the file (i.e. whether it be multipart, base64, etc.) is left up to you as a design decision
     - Make sure to update the specific document in your database with the correct file reference upon upload completion
     
- - Implemented: Used express-fileupload package to decode files from incoming requests, and these file objects are saved in the server seperately. When the save is complete, their references are saved as the profilePic/video of the user, animal, or the training log object. 
+ - 
