@@ -398,7 +398,7 @@ app.post("/api/user/verify", authenticate, (req, res, next) => {
   res.status(200).json("Verification done");
 });
 
-app.post("/api/file/upload", (req, res, next) => {
+app.post("/api/file/upload", authenticate, (req, res, next) => {
   let sampleFile;
   let uploadPath;
   if (!req.files || Object.keys(req.files).length === 0) {
