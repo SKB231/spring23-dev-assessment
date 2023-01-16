@@ -6,6 +6,8 @@ import bodyParser from "body-parser";
 import UserModel from "./Models/User.model.js";
 import AnimalModel from "./Models/Animal.model.js";
 import TrainingModel from "./Models/Training.model.js";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
 dotenv.config();
 const app = express();
@@ -30,11 +32,45 @@ app.get("/", (req, res) => {
   res.json({ Hello: "World", Version: 2 });
 });
 
-app.get("/api/health", (req, res) => {
+app.get("/api/health", authenticate, (req, res) => {
   res.json({ healthy: true });
 });
 
-app.post("/api/user", (req, res, next) => {
+app.post("/api/user/login", (req, res, next) => {
+  if (req.body == null || req.body == undefined) {
+    res.status(400).json("empty body.");
+  }
+  var email = req.body.email;
+  var password = req.body.password;
+
+  UserModel.find({ email: email }, (err, obj) => {
+    if (err) {
+      next(err);
+    }
+    if (!obj) {
+      res.status(403).json("Email/Password provided is incorrect");
+    }
+    var originalHashPassword = obj[0].password;
+    bcrypt.compare(password, originalHashPassword, (err, result) => {
+      if (err) {
+        next(err);
+      }
+      if (result == false) {
+        res.status(403).json("Email/Password provided is incorrect");
+      }
+      const jwtUser = {
+        firstName: obj[0].firstName,
+        obj_id: obj[0].id,
+      };
+      const accessToken = jwt.sign(jwtUser, process.env.ACCESS_TOKEN_SECRET, {
+        expiresIn: "5m",
+      });
+      res.json({ accessToken });
+    });
+  });
+});
+
+app.post("/api/user", authenticate, (req, res, next) => {
   if (req.body == null || req.body == undefined) {
     res.status(400).json("empty body.");
   }
@@ -52,22 +88,29 @@ app.post("/api/user", (req, res, next) => {
     res.status(400).json("body vairable empty.");
   }
 
-  const newUser = new UserModel({
-    firstName: firstName,
-    lastName: lastName,
-    email: email,
-    password: password,
-  });
-  newUser.save((err) => {
+  const saltRounds = 10;
+
+  bcrypt.hash(password, saltRounds, function (err, hash) {
     if (err) {
       next(err);
-    } else {
-      res.status(200).json(`User Saved. Their objectID is: ${newUser.id}`);
     }
+    const newUser = new UserModel({
+      firstName: firstName,
+      lastName: lastName,
+      email: email,
+      password: hash,
+    });
+    newUser.save((err) => {
+      if (err) {
+        next(err);
+      } else {
+        res.status(200).json(`User Saved. Their objectID is: ${newUser.id}`);
+      }
+    });
   });
 });
 
-app.post("/api/animal", (req, res, next) => {
+app.post("/api/animal", authenticate, (req, res, next) => {
   if (req.body == null || req.body == undefined) {
     res.status(400).json("empty body.");
   }
@@ -96,7 +139,7 @@ app.post("/api/animal", (req, res, next) => {
   });
 });
 
-app.post("/api/training", (req, res, next) => {
+app.post("/api/training", authenticate, (req, res, next) => {
   if (req.body == null || req.body == undefined) {
     res.status(400).json("empty body.");
   }
@@ -143,12 +186,45 @@ app.post("/api/training", (req, res, next) => {
   });
 });
 
-app.get("/api/admin/users", (req, res, next) => {
+app.get("/api/admin/users", authenticate, (req, res, next) => {
   UserModel.find((err, allUsers) => {
     if (err) {
       next(err);
     }
+
+    var page = req.query.page;
+    var limit = req.query.limit;
     var returnObject = [];
+
+    var totalRecords = allUsers.length;
+    var nextPage = `http://localhost:${APP_PORT}/api/admin/users?page=${
+      page + 1
+    }`;
+    var prevPage = `http://localhost:${APP_PORT}/api/admin/users?page=${
+      page - 1
+    }`;
+    if (page - 1 < 0 || page == undefined) {
+      prevPage = null;
+    }
+    if (page + 1 <= 0 || page == undefined) {
+      nextPage = null;
+    }
+    if (allUsers.length <= limit) {
+      nextPage = null;
+    }
+
+    if (!page || !limit) {
+      page = Math.max(0, page);
+      limit = 100;
+      allUsers = allUsers.splice(0, limit);
+    } else {
+      page = Math.max(0, page);
+      limit = Math.max(0, limit);
+      limit = Math.min(limit, 100);
+      startIndex = (page - 1) * limit;
+      endIndex = page * limit;
+      allUsers = allUsers.splice(startIndex, endIndex);
+    }
     for (var userObject in allUsers) {
       returnObject[userObject] = {
         firstName: allUsers[userObject].firstName,
@@ -156,7 +232,152 @@ app.get("/api/admin/users", (req, res, next) => {
         email: allUsers[userObject].email,
       };
     }
-    res.send(returnObject)
+    if (!page) {
+      page = 1;
+    }
+    var returnObjectUsers = returnObject;
+    let returnResponse = {
+      data: returnObjectUsers,
+      meta: {
+        total_records: totalRecords,
+        current_page: page,
+        per_page: limit,
+        next_page: nextPage,
+        prev_page: prevPage,
+      },
+    };
+    res.send(returnResponse);
+  });
+});
+
+app.get("/api/admin/animals", authenticate, (req, res, next) => {
+  AnimalModel.find((err, allUsers) => {
+    if (err) {
+      next(err);
+    }
+
+    var page = req.query.page;
+    var limit = req.query.limit;
+    var returnObject = [];
+
+    var totalRecords = allUsers.length;
+    var nextPage = `http://localhost:${APP_PORT}/api/admin/users?page=${
+      page + 1
+    }`;
+    var prevPage = `http://localhost:${APP_PORT}/api/admin/users?page=${
+      page - 1
+    }`;
+    if (page - 1 < 0 || page == undefined) {
+      prevPage = null;
+    }
+    if (page + 1 <= 0 || page == undefined) {
+      nextPage = null;
+    }
+    if (allUsers.length <= limit) {
+      nextPage = null;
+    }
+
+    if (!page || !limit) {
+      page = Math.max(0, page);
+      limit = 100;
+      allUsers = allUsers.splice(0, limit);
+    } else {
+      page = Math.max(0, page);
+      limit = Math.max(0, limit);
+      limit = Math.min(limit, 100);
+      startIndex = (page - 1) * limit;
+      endIndex = page * limit;
+      allUsers = allUsers.splice(startIndex, endIndex);
+    }
+    for (var userObject in allUsers) {
+      returnObject[userObject] = {
+        name: allUsers[userObject].name,
+        hoursTrained: allUsers[userObject].hoursTrained,
+        dateOfBirth: allUsers[userObject].dateOfBirth,
+        owner: allUsers[userObject].owner,
+      };
+    }
+    if (!page) {
+      page = 1;
+    }
+    var returnObjectUsers = returnObject;
+    let returnResponse = {
+      data: returnObjectUsers,
+      meta: {
+        total_records: totalRecords,
+        current_page: page,
+        per_page: limit,
+        next_page: nextPage,
+        prev_page: prevPage,
+      },
+    };
+    res.send(returnResponse);
+  });
+});
+
+app.get("/api/admin/training", authenticate, (req, res, next) => {
+  TrainingModel.find((err, allUsers) => {
+    if (err) {
+      next(err);
+    }
+
+    var page = req.query.page;
+    var limit = req.query.limit;
+    var returnObject = [];
+
+    var totalRecords = allUsers.length;
+    var nextPage = `http://localhost:${APP_PORT}/api/admin/users?page=${
+      page + 1
+    }`;
+    var prevPage = `http://localhost:${APP_PORT}/api/admin/users?page=${
+      page - 1
+    }`;
+    if (page - 1 < 0 || page == undefined) {
+      prevPage = null;
+    }
+    if (page + 1 <= 0 || page == undefined) {
+      nextPage = null;
+    }
+    if (allUsers.length <= limit) {
+      nextPage = null;
+    }
+
+    if (!page || !limit) {
+      page = Math.max(0, page);
+      limit = 100;
+      allUsers = allUsers.splice(0, limit);
+    } else {
+      page = Math.max(0, page);
+      limit = Math.max(0, limit);
+      limit = Math.min(limit, 100);
+      startIndex = (page - 1) * limit;
+      endIndex = page * limit;
+      allUsers = allUsers.splice(startIndex, endIndex);
+    }
+    for (var userObject in allUsers) {
+      returnObject[userObject] = {
+        date: allUsers[userObject].date,
+        description: allUsers[userObject].description,
+        hours: allUsers[userObject].hours,
+        animal: allUsers[userObject].animal,
+        user: allUsers[userObject].user,
+      };
+    }
+    if (!page) {
+      page = 1;
+    }
+    var returnObjectUsers = returnObject;
+    let returnResponse = {
+      data: returnObjectUsers,
+      meta: {
+        total_records: totalRecords,
+        current_page: page,
+        per_page: limit,
+        next_page: nextPage,
+        prev_page: prevPage,
+      },
+    };
+    res.send(returnResponse);
   });
 });
 
@@ -171,3 +392,21 @@ app.use((error, req, res, next) => {
 app.listen(APP_PORT, () => {
   console.log(`api listening at http://localhost:${APP_PORT}`);
 });
+
+app.post("/api/user/verify", authenticate, (req, res, next) => {
+  res.status(200).json("Verification done");
+});
+
+function authenticate(req, res, next) {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
+
+  if (token == null) return res.sendStatus(403);
+
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
+    if (err) return res.sendStatus(403);
+
+    req.user = user;
+    next();
+  });
+}
