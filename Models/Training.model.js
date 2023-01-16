@@ -21,7 +21,10 @@ const trainingModelSchema = new Schema({
     type: Schema.Types.ObjectId,
     required: true,
   }, // user this training log corresponds to
-  //trainingLogVideo?: string // pointer to training log video in cloud storage --> used in Expert level
+  trainingLogVideo: {
+    type: Schema.Types.ObjectId,
+    required: false,
+  }, // pointer to training log video in cloud storage --> used in Expert level
 });
 
 export default mongoose.model("TrainingModel", trainingModelSchema);

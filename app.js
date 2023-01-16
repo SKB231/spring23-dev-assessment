@@ -8,13 +8,15 @@ import AnimalModel from "./Models/Animal.model.js";
 import TrainingModel from "./Models/Training.model.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-
+import fileUpload from "express-fileupload";
+import fileModel from "./Models/File.model.js";
 dotenv.config();
 const app = express();
 const APP_PORT = process.env.APP_PORT;
 app.use(cors({ origin: true }));
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
+app.use(fileUpload());
 const mongoDBuri = `mongodb+srv://skb231:${process.env.MPASS}@cluster0.p2bu5.mongodb.net/?retryWrites=true&w=majority`;
 
 async function connect() {
@@ -70,7 +72,7 @@ app.post("/api/user/login", (req, res, next) => {
   });
 });
 
-app.post("/api/user", authenticate, (req, res, next) => {
+app.post("/api/user", (req, res, next) => {
   if (req.body == null || req.body == undefined) {
     res.status(400).json("empty body.");
   }
@@ -116,9 +118,8 @@ app.post("/api/animal", authenticate, (req, res, next) => {
   }
   var name = req.body.name;
   var hoursTrained = req.body.hoursTrained;
-  var owner = req.body.owner;
+  var owner = req.user.obj_id;
   var dateOfBirth = req.body.dateOfBirth;
-
   if (name == undefined || hoursTrained == undefined || owner == undefined) {
     console.log(`${name} ${hoursTrained} ${owner}`);
     res.status(400).json("body vairable empty.");
@@ -147,7 +148,7 @@ app.post("/api/training", authenticate, (req, res, next) => {
   var description = req.body.description;
   var hours = req.body.hours;
   var animal = req.body.animal;
-  var user = req.body.user;
+  var user = req.user.obj_id;
 
   if (
     date == undefined ||
@@ -395,6 +396,74 @@ app.listen(APP_PORT, () => {
 
 app.post("/api/user/verify", authenticate, (req, res, next) => {
   res.status(200).json("Verification done");
+});
+
+app.post("/api/file/upload", (req, res, next) => {
+  let sampleFile;
+  let uploadPath;
+  if (!req.files || Object.keys(req.files).length === 0) {
+    return res.status(400).send("No files were uploaded.");
+  }
+
+  let type = req.body.fileType;
+  let contextId = req.body.contextId;
+  let reqFile = req.files.myfile;
+  console.log(req.files);
+  const newFile = new fileModel({
+    data: reqFile.data,
+    name: reqFile.name,
+    mimetype: reqFile.mimetype,
+  });
+  if (type == "animalImage") {
+    newFile.save((err, savedFile) => {
+      if (err) {
+        next(err);
+      }
+      AnimalModel.updateOne(
+        { _id: contextId },
+        { $set: { profilePicture: savedFile.id } },
+        (err) => {
+          if (err) {
+            next(err);
+          }
+          res.status(200).json("Profile Picture Updated.");
+        }
+      );
+    });
+  } else if (type == "userImage") {
+    newFile.save((err, savedFile) => {
+      if (err) {
+        next(err);
+      }
+      UserModel.updateOne(
+        { _id: contextId },
+        { $set: { profilePicture: savedFile.id } },
+        (err) => {
+          if (err) {
+            next(err);
+          }
+          res.status(200).json("Profile Picture Updated.");
+        }
+      );
+    });
+  } else {
+    //trainingLogVideo
+    newFile.save((err, savedFile) => {
+      if (err) {
+        next(err);
+      }
+      TrainingModel.updateOne(
+        { _id: contextId },
+        { $set: { trainingLogVideo: savedFile.id } },
+        (err) => {
+          if (err) {
+            next(err);
+          }
+          res.status(200).json("Profile Picture Updated.");
+        }
+      );
+    });
+  }
 });
 
 function authenticate(req, res, next) {
